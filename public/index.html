@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>SmartCity Logistics</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      margin: 0;
+      background: #f4f6f9;
+    }
+
+    header {
+      background: #1f2937;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    button, input {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    input {
+      border: 1px solid #ccc;
+    }
+
+    .card {
+      background: white;
+      padding: 10px;
+      margin-top: 15px;
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+
+    th {
+      background: #eee;
+    }
+
+    tr:hover {
+      background: #f0f9ff;
+    }
+
+    .kpi {
+      display: flex;
+      gap: 10px;
+    }
+
+    .box {
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      flex: 1;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>SmartCity Logistics Dashboard</h1>
+</header>
+
+<div class="container">
+
+  <!-- KPI -->
+  <div class="kpi">
+    <div class="box" id="vCount">Vehicles: -</div>
+    <div class="box" id="mCount">Missions: -</div>
+    <div class="box" id="maCount">Maintenance: -</div>
+  </div>
+
+  <!-- CONTROLLI -->
+  <input id="search" placeholder="Cerca..." oninput="filterTable()">
+
+  <button onclick="load('vehicles')">Vehicles</button>
+  <button onclick="load('missions')">Missions</button>
+  <button onclick="load('maintenance')">Maintenance</button>
+  <button onclick="refresh()">Refresh</button>
+
+  <div class="card">
+    <table>
+      <thead id="head"></thead>
+      <tbody id="body"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+let globalData = [];
+
+/* ================= LOAD ================= */
+async function load(type) {
+  const res = await fetch(`/api/${type}`);
+  const data = await res.json();
+
+  globalData = data;
+  render(data);
+}
+
+/* ================= RENDER ================= */
+function render(data) {
+  if (!data.length) return;
+
+  const keys = Object.keys(data[0]);
+
+  document.getElementById("head").innerHTML =
+    "<tr>" + keys.map(k => `<th>${k}</th>`).join("") + "</tr>";
+
+  document.getElementById("body").innerHTML =
+    data.map(row =>
+      "<tr>" + keys.map(k => `<td>${row[k]}</td>`).join("") + "</tr>"
+    ).join("");
+}
+
+/* ================= SEARCH ================= */
+function filterTable() {
+  const value = document.getElementById("search").value.toLowerCase();
+
+  const filtered = globalData.filter(row =>
+    Object.values(row).some(v =>
+      String(v).toLowerCase().includes(value)
+    )
+  );
+
+  render(filtered);
+}
+
+/* ================= REFRESH ================= */
+function refresh() {
+  load('vehicles');
+}
+
+/* ================= KPI ================= */
+async function loadKPI() {
+  const v = await (await fetch("/api/vehicles")).json();
+  const m = await (await fetch("/api/missions")).json();
+  const ma = await (await fetch("/api/maintenance")).json();
+
+  document.getElementById("vCount").innerText = `Vehicles: ${v.length}`;
+  document.getElementById("mCount").innerText = `Missions: ${m.length}`;
+  document.getElementById("maCount").innerText = `Maintenance: ${ma.length}`;
+}
+
+/* INIT */
+loadKPI();
+load('vehicles');
+</script>
+
+</body>
+</html>
